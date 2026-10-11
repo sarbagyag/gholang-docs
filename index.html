@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>clox Docs</title>
+<meta name="description" content="Documentation for clox, a bytecode virtual machine for the Lox language written in C, following Crafting Interpreters." />
+<meta name="theme-color" content="#b3431a" />
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <button id="menu-btn" class="icon-btn" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav">☰</button>
+  <a class="brand" href="#overview"><span class="mark">cl</span> clox <small>docs</small></a>
+  <span class="spacer"></span>
+  <a class="top-link" href="https://craftinginterpreters.com/a-bytecode-virtual-machine.html" rel="noopener">The book ↗</a>
+  <button id="theme-btn" class="icon-btn" type="button" aria-label="Toggle theme">☾</button>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" aria-label="Documentation">
+    <input id="nav-search" type="search" placeholder="Filter pages…" aria-label="Filter pages" />
+    <nav id="nav"></nav>
+  </aside>
+
+  <main>
+  <div class="content">
+
+  <!-- ═════════════ GET STARTED ═════════════ -->
+
+  <section id="overview" data-group="Get started" data-title="Overview">
+    <p class="eyebrow">clox</p>
+    <h1>A bytecode VM for Lox, in C.</h1>
+    <p class="lead">clox compiles Lox source into compact bytecode in a single pass, then runs it on a stack-based virtual machine. It is the second half of <em>Crafting Interpreters</em> by Robert Nystrom, written in plain C99 with no dependencies.</p>
+    <div class="hero-actions">
+      <a class="btn" href="#build">Build &amp; run</a>
+      <a class="btn ghost" href="#pipeline">How it works</a>
+    </div>
+
+    <div class="cards">
+      <div class="card"><b>Single-pass compiler</b><span>A Pratt parser emits bytecode directly. There is no AST.</span></div>
+      <div class="card"><b>Stack VM</b><span>One <code>switch</code> loop over 29 opcodes, with call frames.</span></div>
+      <div class="card"><b>Closures</b><span>Captured variables live on the stack until they are closed over.</span></div>
+      <div class="card"><b>Small</b><span>About 3,000 lines of C in <code>src/</code>.</span></div>
+    </div>
+
+    <h3>What the language has</h3>
+    <ul>
+      <li>Numbers (<code>double</code>), booleans, <code>nil</code> and strings</li>
+      <li>Global and local variables with block scope</li>
+      <li><code>if</code> / <code>else</code>, <code>while</code>, <code>for</code>, <code>and</code> / <code>or</code></li>
+      <li>First-class functions, recursion and closures</li>
+      <li>A native function, <code>clock()</code></li>
+    </ul>
+
+    <div class="callout note">
+      <span class="t">Scope</span>
+      <p>This site documents the implementation through the closures chapter. Garbage collection, classes and inheritance are not in the code yet. See <a href="#status">Status</a>.</p>
+    </div>
+  </section>
+
+  <section id="build" data-group="Get started" data-title="Build &amp; run">
+    <p class="eyebrow">Get started</p>
+    <h2>Build &amp; run</h2>
+    <p>You need a C compiler and <code>make</code>. The <code>Makefile</code> uses <code>clang</code> with <code>-Wall -Wextra -std=c99</code>.</p>
+    <pre data-lang="bash" data-title="shell">git clone &lt;your-repo-url&gt; clox
+cd clox
+make            # builds ./clox
+./clox script.lox</pre>
+    <p>If you don't have <code>clang</code>, override it: <code>make CC=gcc</code>. <code>make clean</code> removes the binary.</p>
+
+    <h3>Your first program</h3>
+    <pre data-lang="lox" data-title="hello.lox">var greeting = "Hello";
+print greeting + ", clox!";</pre>
+
+    <div class="callout warn">
+      <span class="t">Debug output is on by default</span>
+      <p><code>src/common.h</code> defines <code>DEBUG_PRINT_CODE</code> and <code>DEBUG_TRACE_EXECUTION</code>, so every run prints the disassembly and a stack trace before and during execution. Comment out those two lines (and rebuild) for clean output.</p>
+    </div>
+    <pre data-lang="c" data-title="src/common.h">// #define DEBUG_PRINT_CODE
+// #define DEBUG_TRACE_EXECUTION</pre>
+  </section>
+
+  <section id="cli" data-group="Get started" data-title="CLI &amp; REPL">
+    <p class="eyebrow">Get started</p>
+    <h2>CLI &amp; REPL</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Invocation</th><th>Behaviour</th></tr>
+      <tr><td><code>./clox</code></td><td>Starts the REPL with a <code>&gt; </code> prompt. Press Ctrl-D to quit.</td></tr>
+      <tr><td><code>./clox file.lox</code></td><td>Reads the whole file, then interprets it.</td></tr>
+      <tr><td><code>./clox a b</code></td><td>Prints <code>Usage: clox [path]</code> and exits 64.</td></tr>
+    </table></div>
+
+    <p>The REPL reads one line at a time (up to 1023 characters) and interprets each as its own script. Globals persist between lines because they live in the VM, but a statement can't span lines.</p>
+
+    <h3>Exit codes</h3>
+    <p>They follow the <code>sysexits.h</code> convention used in the book.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Code</th><th>Meaning</th></tr>
+      <tr><td><code>0</code></td><td>Success</td></tr>
+      <tr><td><code>64</code></td><td>Bad command-line usage</td></tr>
+      <tr><td><code>65</code></td><td>Compile error</td></tr>
+      <tr><td><code>70</code></td><td>Runtime error</td></tr>
+      <tr><td><code>74</code></td><td>I/O error: file can't be opened, or out of memory while reading it</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ═════════════ LANGUAGE ═════════════ -->
+
+  <section id="values" data-group="Language" data-title="Values &amp; types">
+    <p class="eyebrow">Language</p>
+    <h2>Values &amp; types</h2>
+    <p>Lox is dynamically typed. Every value is one of four kinds:</p>
+    <div class="table-wrap"><table>
+      <tr><th>Type</th><th>Literal</th><th>Notes</th></tr>
+      <tr><td>Number</td><td><code>12</code>, <code>3.14</code></td><td>Always a 64-bit <code>double</code>. No leading <code>.</code> or trailing <code>.</code>, and no negative literals (<code>-1</code> is negation).</td></tr>
+      <tr><td>Boolean</td><td><code>true</code>, <code>false</code></td><td></td></tr>
+      <tr><td>Nil</td><td><code>nil</code></td><td>The absence of a value. Uninitialised variables are <code>nil</code>.</td></tr>
+      <tr><td>String</td><td><code>"text"</code></td><td>Double quotes only. No escape sequences. May span lines.</td></tr>
+    </table></div>
+    <p>Functions are values too. They print as <code>&lt;fn name&gt;</code>, and the native <code>clock</code> prints as <code>&lt;native fn&gt;</code>.</p>
+
+    <h3>Truthiness</h3>
+    <p>Only <code>nil</code> and <code>false</code> are falsey. Everything else is truthy, including <code>0</code> and <code>""</code>.</p>
+
+    <h3>Printing numbers</h3>
+    <p>Numbers print with C's <code>%g</code>, so <code>2.0</code> prints as <code>2</code>, and very large or small values use exponent form.</p>
+    <pre data-lang="lox">print 7 / 2;      // 3.5
+print 10 / 5;     // 2
+print 1 / 0;      // inf</pre>
+
+    <h3>Equality</h3>
+    <p><code>==</code> compares type first, so values of different types are never equal (<code>0 == false</code> is <code>false</code>). Strings compare equal when their contents match, because they are <a href="#objects">interned</a>.</p>
+  </section>
+
+  <section id="expressions" data-group="Language" data-title="Expressions">
+    <p class="eyebrow">Language</p>
+    <h2>Expressions</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Operators</th><th>Operands</th><th>Result</th></tr>
+      <tr><td><code>-x</code></td><td>number</td><td>number</td></tr>
+      <tr><td><code>!x</code></td><td>any</td><td>boolean (inverse of truthiness)</td></tr>
+      <tr><td><code>* /</code></td><td>numbers</td><td>number</td></tr>
+      <tr><td><code>+</code></td><td>two numbers <em>or</em> two strings</td><td>sum or concatenation</td></tr>
+      <tr><td><code>-</code></td><td>numbers</td><td>number</td></tr>
+      <tr><td><code>&lt; &lt;= &gt; &gt;=</code></td><td>numbers</td><td>boolean</td></tr>
+      <tr><td><code>== !=</code></td><td>any</td><td>boolean</td></tr>
+      <tr><td><code>and</code> <code>or</code></td><td>any</td><td>one of the operands (short-circuit)</td></tr>
+      <tr><td><code>=</code></td><td>variable, expression</td><td>the assigned value</td></tr>
+    </table></div>
+
+    <pre data-lang="lox">print "con" + "cat";        // concat
+print (1 + 2) * 3;          // 9
+print nil or "fallback";    // fallback
+print 1 and 2;              // 2   (and/or return an operand, not a boolean)
+print !nil;                 // true</pre>
+
+    <p>See <a href="#precedence">Precedence</a> for how these bind. Mixing types gives a runtime error: <code>"a" + 1</code> fails with <em>Operands must be two numbers or two strings.</em></p>
+  </section>
+
+  <section id="variables" data-group="Language" data-title="Variables &amp; scope">
+    <p class="eyebrow">Language</p>
+    <h2>Variables &amp; scope</h2>
+    <pre data-lang="lox">var a;            // nil
+var b = 10;
+b = b + 1;        // assignment is an expression
+
+{
+  var c = "local";
+  print c;
+}
+// print c;       // runtime error: Undefined variable 'c'.</pre>
+
+    <h3>Globals vs. locals</h3>
+    <p>Where a variable is declared decides how it's stored:</p>
+    <ul>
+      <li><b>Global</b> (top level) variables live in a hash table, looked up by name at runtime. You can redeclare a global; assigning to one that was never declared is a runtime error.</li>
+      <li><b>Local</b> variables (inside a block or function) live on the VM stack and are resolved to a <em>slot number</em> at compile time. There's no name lookup at runtime.</li>
+    </ul>
+
+    <div class="callout note">
+      <span class="t">Rules the compiler enforces</span>
+      <p>A local can't be redeclared in the same scope (<em>Already a variable with this name in this scope.</em>), and can't be read in its own initializer (<em>Can't read local variable in its own initializer.</em>). A function has at most 256 local slots.</p>
+    </div>
+  </section>
+
+  <section id="control-flow" data-group="Language" data-title="Control flow">
+    <p class="eyebrow">Language</p>
+    <h2>Control flow</h2>
+    <pre data-lang="lox">if (x &gt; 0) print "positive"; else print "not positive";
+
+var i = 0;
+while (i &lt; 3) { print i; i = i + 1; }
+
+for (var j = 0; j &lt; 3; j = j + 1) print j;</pre>
+    <p>All three <code>for</code> clauses are optional. The initializer can be a <code>var</code> declaration or an expression. A variable declared there is scoped to the loop.</p>
+    <p>There's no <code>break</code>, <code>continue</code> or <code>switch</code>. Under the hood all of this compiles to <a href="#opcodes"><code>OP_JUMP</code>, <code>OP_JUMP_IF_FALSE</code> and <code>OP_LOOP</code></a>.</p>
+  </section>
+
+  <section id="functions" data-group="Language" data-title="Functions">
+    <p class="eyebrow">Language</p>
+    <h2>Functions</h2>
+    <pre data-lang="lox">fun fib(n) {
+  if (n &lt; 2) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+print fib(10);   // 55
+print fib;       // &lt;fn fib&gt;</pre>
+    <ul>
+      <li>Functions are declared with <code>fun</code>, take up to 255 parameters, and are called with up to 255 arguments.</li>
+      <li>The argument count must match exactly: <em>Expected 2 arguments but got 1.</em></li>
+      <li>A function without a <code>return</code> (or with a bare <code>return;</code>) returns <code>nil</code>.</li>
+      <li><code>return</code> at the top level is a compile error.</li>
+      <li>Call depth is capped at <b>64 frames</b>. Deeper recursion fails with <em>Stack overflow.</em></li>
+    </ul>
+  </section>
+
+  <section id="closures" data-group="Language" data-title="Closures">
+    <p class="eyebrow">Language</p>
+    <h2>Closures</h2>
+    <p>A function can use variables from enclosing functions, and keep using them after those functions have returned.</p>
+    <pre data-lang="lox">fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    return i;
+  }
+  return count;
+}
+
+var c = makeCounter();
+print c();   // 1
+print c();   // 2</pre>
+    <p>Here <code>count</code> captures <code>i</code>, which would normally vanish when <code>makeCounter</code> returns. clox keeps it alive using <a href="#upvalues">upvalues</a>.</p>
+  </section>
+
+  <section id="natives" data-group="Language" data-title="Native functions">
+    <p class="eyebrow">Language</p>
+    <h2>Native functions</h2>
+    <p>The VM registers one native function at startup:</p>
+    <div class="table-wrap"><table>
+      <tr><th>Function</th><th>Returns</th></tr>
+      <tr><td><code>clock()</code></td><td>CPU time used by the process, in seconds, as a number.</td></tr>
+    </table></div>
+    <pre data-lang="lox">var start = clock();
+// … work …
+print clock() - start;</pre>
+    <p>Natives are C functions with the signature <code>Value fn(int argCount, Value *args)</code>. They aren't arity-checked by the VM, so a native must validate its own arguments. To add one, write the function in <code>vm.c</code> and register it in <code>initVM()</code>:</p>
+    <pre data-lang="c" data-title="src/vm.c">defineNative("clock", clockNative);</pre>
+  </section>
+
+  <section id="errors" data-group="Language" data-title="Errors">
+    <p class="eyebrow">Language</p>
+    <h2>Errors</h2>
+    <h3>Compile errors</h3>
+    <p>Printed to stderr as <code>[line N] Error at 'token': message</code>. After the first error the parser enters <em>panic mode</em> and skips tokens until a statement boundary, so you see one error per mistake rather than a cascade. The program is not run.</p>
+    <pre data-lang="shell" data-title="shell" data-nolabel>$ ./clox bad.lox
+[line 1] Error at '1': Expect variable name.
+$ echo $?
+65</pre>
+    <div class="table-wrap"><table>
+      <tr><th>Message</th><th>Cause</th></tr>
+      <tr><td><code>Expect expression.</code></td><td>A token that can't start an expression (this includes <code>class</code>, <code>this</code>, <code>super</code> and <code>.</code>, which are scanned but not parsed).</td></tr>
+      <tr><td><code>Invalid assignment target.</code></td><td><code>a + b = c;</code></td></tr>
+      <tr><td><code>Can't return from top-level code.</code></td><td><code>return</code> outside a function</td></tr>
+      <tr><td><code>Too many constants in one chunk</code></td><td>More than 256 constants in one function</td></tr>
+      <tr><td><code>Too many local variables in function.</code></td><td>More than 256 locals</td></tr>
+      <tr><td><code>Too many closure variables in function.</code></td><td>More than 256 upvalues</td></tr>
+      <tr><td><code>Too much code to jump over.</code></td><td>A jump offset over 65,535 bytes</td></tr>
+      <tr><td><code>Loop body too large.</code></td><td>A loop body over 65,535 bytes</td></tr>
+      <tr><td><code>Unterminated String.</code></td><td>Missing closing <code>"</code></td></tr>
+    </table></div>
+
+    <h3>Runtime errors</h3>
+    <p>Printed with a stack trace, one line per active call frame, innermost first.</p>
+    <pre data-lang="shell" data-title="shell" data-nolabel>Undefined variable 'undefinedVar'.
+[line 1] in script</pre>
+    <div class="table-wrap"><table>
+      <tr><th>Message</th><th>Cause</th></tr>
+      <tr><td><code>Operand must be a number.</code></td><td>Unary <code>-</code> on a non-number</td></tr>
+      <tr><td><code>Operands must be numbers.</code></td><td><code>- * / &lt; &gt;</code> (and <code>&lt;= &gt;=</code>) on non-numbers</td></tr>
+      <tr><td><code>Operands must be two numbers or two strings.</code></td><td><code>+</code> on anything else</td></tr>
+      <tr><td><code>Undefined variable 'x'.</code></td><td>Reading or assigning an undeclared global</td></tr>
+      <tr><td><code>Can only call functions and classes.</code></td><td>Calling a non-callable value</td></tr>
+      <tr><td><code>Expected N arguments but got M.</code></td><td>Wrong argument count</td></tr>
+      <tr><td><code>Stack overflow.</code></td><td>More than 64 nested calls</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ═════════════ INTERNALS ═════════════ -->
+
+  <section id="pipeline" data-group="Internals" data-title="The pipeline">
+    <p class="eyebrow">Internals</p>
+    <h2>The pipeline</h2>
+    <p>Source text goes through three stages. The first two are interleaved: the compiler pulls tokens from the scanner on demand.</p>
+    <div class="pipeline">
+      <div class="step"><b>Source</b><code>char *</code></div>
+      <span class="arrow">→</span>
+      <div class="step"><b>Scanner</b><code>scanner.c</code></div>
+      <span class="arrow">→</span>
+      <div class="step"><b>Compiler</b><code>compiler.c</code></div>
+      <span class="arrow">→</span>
+      <div class="step"><b>Chunk</b><code>bytecode</code></div>
+      <span class="arrow">→</span>
+      <div class="step"><b>VM</b><code>vm.c</code></div>
+    </div>
+    <p>The entry point is <code>interpret()</code> in <code>vm.c</code>:</p>
+    <pre data-lang="c" data-title="src/vm.c">InterpretResult interpret(const char *source)
+{
+    ObjFunction *function = compile(source);
+    if (function == NULL)
+        return INTERPRET_COMPILE_ERROR;
+
+    push(OBJ_VAL(function));
+    ObjClosure *closure = newClosure(function);
+    pop();
+    push(OBJ_VAL(closure));
+    call(closure, 0);
+
+    return run();
+}</pre>
+    <p>The whole program is compiled as an implicit top-level function called <code>&lt;script&gt;</code>, wrapped in a closure and called with zero arguments. That's why the top level and functions share the same machinery.</p>
+  </section>
+
+  <section id="scanner" data-group="Internals" data-title="Scanner">
+    <p class="eyebrow">Internals</p>
+    <h2>Scanner</h2>
+    <p><code>scanner.c</code> turns characters into tokens <em>lazily</em>: <code>scanToken()</code> returns one token per call and never builds a list. A token doesn't copy text. It points into the source string:</p>
+    <pre data-lang="c" data-title="src/scanner.h">typedef struct
+{
+    TokenType type;
+    const char *start;   // into the source
+    int length;
+    int line;
+} Token;</pre>
+    <ul>
+      <li>Whitespace and <code>//</code> comments are skipped; newlines bump the line counter.</li>
+      <li>Keywords are recognised with a hand-written <em>trie</em> in <code>identifierType()</code>: switch on the first letter, then compare the rest with <code>memcmp</code>.</li>
+      <li>Errors are returned as a <code>TOKEN_ERROR</code> whose <code>start</code> points at the message.</li>
+    </ul>
+    <p>The language has 16 keywords: <code>and class else false for fun if nil or print return super this true var while</code>, though <code>class</code>, <code>super</code> and <code>this</code> don't do anything yet.</p>
+  </section>
+
+  <section id="compiler" data-group="Internals" data-title="Compiler">
+    <p class="eyebrow">Internals</p>
+    <h2>Compiler</h2>
+    <p><code>compiler.c</code> is the biggest file. It is a <b>single-pass</b> compiler: it parses and emits bytecode at the same time, with no syntax tree in between.</p>
+
+    <h3>Pratt parsing</h3>
+    <p>Expressions use a Pratt parser driven by a table. Each token type has an optional prefix function, an optional infix function and a precedence:</p>
+    <pre data-lang="c" data-title="src/compiler.c">typedef struct
+{
+    ParseFn prefix;
+    ParseFn infix;
+    Precedence precedence;
+} ParseRule;
+
+ParseRule rules[] = {
+    [TOKEN_LEFT_PAREN] = {grouping, call,   PREC_CALL},
+    [TOKEN_MINUS]      = {unary,    binary, PREC_TERM},
+    [TOKEN_PLUS]       = {NULL,     binary, PREC_TERM},
+    [TOKEN_AND]        = {NULL,     and_,   PREC_AND},
+    // …
+};</pre>
+    <p><code>parsePrecedence(p)</code> parses the prefix expression, then keeps consuming infix operators while their precedence is at least <code>p</code>. For left-associativity, <code>binary()</code> parses its right operand at <code>precedence + 1</code>.</p>
+
+    <h3>Assignment</h3>
+    <p>Each parse function receives <code>canAssign</code>, which is true only when we're parsing at assignment precedence or lower. That's how <code>a + b = c</code> is rejected as <em>Invalid assignment target</em> while <code>a = c</code> works.</p>
+
+    <h3>Desugaring</h3>
+    <p>Some operators don't have their own opcode. The compiler emits a pair:</p>
+    <div class="table-wrap"><table>
+      <tr><th>Source</th><th>Emitted</th></tr>
+      <tr><td><code>a != b</code></td><td><code>OP_EQUAL</code>, <code>OP_NOT</code></td></tr>
+      <tr><td><code>a &lt;= b</code></td><td><code>OP_GREATER</code>, <code>OP_NOT</code></td></tr>
+      <tr><td><code>a &gt;= b</code></td><td><code>OP_LESS</code>, <code>OP_NOT</code></td></tr>
+    </table></div>
+
+    <h3>Jumps</h3>
+    <p>Control flow uses <em>backpatching</em>. <code>emitJump()</code> writes the opcode and a two-byte placeholder (<code>0xffff</code>) and returns its position. Once the target is known, <code>patchJump()</code> fills in the real distance. Backward jumps (<code>OP_LOOP</code>) already know their target, so <code>emitLoop()</code> computes the offset directly.</p>
+
+    <h3>One compiler per function</h3>
+    <p>Each function being compiled gets a <code>Compiler</code> struct holding its locals, upvalues and scope depth. They form a linked list through <code>enclosing</code>, and the global <code>current</code> points to the innermost. Slot 0 of every function is reserved for the callee itself.</p>
+  </section>
+
+  <section id="chunks" data-group="Internals" data-title="Chunks &amp; bytecode">
+    <p class="eyebrow">Internals</p>
+    <h2>Chunks &amp; bytecode</h2>
+    <p>A <b>chunk</b> is a function's compiled body. It's three parallel dynamic arrays:</p>
+    <pre data-lang="c" data-title="src/chunk.h">typedef struct
+{
+    int count;
+    int capacity;
+    uint8_t *code;          // opcodes and operands
+    int *lines;             // source line of each byte
+    ValueArray constants;   // literals and names
+} Chunk;</pre>
+    <p>Arrays grow by doubling (minimum 8) through <code>GROW_CAPACITY</code> and <code>reallocate()</code>. The <code>lines</code> array runs parallel to <code>code</code>, which is how runtime errors report a line number.</p>
+
+    <h3>The constant pool</h3>
+    <p>Literals and variable names don't sit inside the instruction stream. They're stored in <code>constants</code>, and instructions refer to them by a one-byte index. That caps a chunk at 256 constants.</p>
+
+    <h3>Example</h3>
+    <p>For <code>print 1 + 2 * 3;</code>, the disassembler prints:</p>
+    <pre data-lang="bytecode" data-title="disassembly">== &lt;script&gt; ==
+0000    1 OP_CONSTANT         0 '1'
+0002   |OP_CONSTANT         1 '2'
+0004   |OP_CONSTANT         2 '3'
+0006   |OP_MULTIPLY
+0007   |OP_ADD
+0008   |OP_PRINT
+0009    2 OP_NIL
+0010   |OP_RETURN</pre>
+    <p>The columns are: byte offset, source line (<code>|</code> means same as above), opcode, then the operand and the constant it refers to. The final <code>OP_NIL</code> / <code>OP_RETURN</code> is the implicit return every function gets.</p>
+  </section>
+
+  <section id="opcodes" data-group="Internals" data-title="Instruction set">
+    <p class="eyebrow">Internals</p>
+    <h2>Instruction set</h2>
+    <p>29 opcodes, each one byte. “Operand” bytes follow the opcode in the stream. Stack effects are shown as <code>before → after</code>.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Opcode</th><th>Operands</th><th>Effect</th></tr>
+      <tr><td><code>OP_CONSTANT</code></td><td>1: constant index</td><td><code>→ value</code></td></tr>
+      <tr><td><code>OP_NIL</code> / <code>OP_TRUE</code> / <code>OP_FALSE</code></td><td>–</td><td><code>→ nil</code> / <code>true</code> / <code>false</code></td></tr>
+      <tr><td><code>OP_POP</code></td><td>–</td><td><code>value →</code></td></tr>
+      <tr><td><code>OP_GET_LOCAL</code></td><td>1: stack slot</td><td>pushes a copy of the local</td></tr>
+      <tr><td><code>OP_SET_LOCAL</code></td><td>1: stack slot</td><td>stores top of stack into the slot, <em>leaves it on the stack</em></td></tr>
+      <tr><td><code>OP_GET_GLOBAL</code></td><td>1: name constant</td><td>pushes global, or runtime error if undefined</td></tr>
+      <tr><td><code>OP_DEFINE_GLOBAL</code></td><td>1: name constant</td><td>stores top of stack in globals, then pops it</td></tr>
+      <tr><td><code>OP_SET_GLOBAL</code></td><td>1: name constant</td><td>assigns an existing global; errors if it doesn't exist</td></tr>
+      <tr><td><code>OP_GET_UPVALUE</code> / <code>OP_SET_UPVALUE</code></td><td>1: upvalue index</td><td>read or write a captured variable</td></tr>
+      <tr><td><code>OP_EQUAL</code></td><td>–</td><td><code>a b → a==b</code></td></tr>
+      <tr><td><code>OP_GREATER</code> / <code>OP_LESS</code></td><td>–</td><td><code>a b → bool</code></td></tr>
+      <tr><td><code>OP_ADD</code></td><td>–</td><td>number addition or string concatenation</td></tr>
+      <tr><td><code>OP_SUBTRACT</code> / <code>OP_MULTIPLY</code> / <code>OP_DIVIDE</code></td><td>–</td><td><code>a b → result</code></td></tr>
+      <tr><td><code>OP_NOT</code></td><td>–</td><td>replaces top with its falsiness</td></tr>
+      <tr><td><code>OP_NEGATE</code></td><td>–</td><td>negates the number on top</td></tr>
+      <tr><td><code>OP_PRINT</code></td><td>–</td><td>pops and prints, plus newline</td></tr>
+      <tr><td><code>OP_JUMP</code></td><td>2: offset</td><td>unconditional forward jump</td></tr>
+      <tr><td><code>OP_JUMP_IF_FALSE</code></td><td>2: offset</td><td>jump if top is falsey. <em>Does not pop.</em></td></tr>
+      <tr><td><code>OP_LOOP</code></td><td>2: offset</td><td>unconditional backward jump</td></tr>
+      <tr><td><code>OP_CALL</code></td><td>1: arg count</td><td>calls the value below the arguments</td></tr>
+      <tr><td><code>OP_CLOSURE</code></td><td>1: function constant, then 2 bytes per upvalue (<code>isLocal</code>, <code>index</code>)</td><td>wraps a function in a closure and pushes it</td></tr>
+      <tr><td><code>OP_CLOSE_UPVALUE</code></td><td>–</td><td>moves a captured local off the stack, then pops it</td></tr>
+      <tr><td><code>OP_RETURN</code></td><td>–</td><td>pops the result, closes upvalues, pops the frame, pushes the result</td></tr>
+    </table></div>
+    <p>Jump offsets are 16-bit and big-endian, relative to the byte after the operand.</p>
+  </section>
+
+  <section id="vm" data-group="Internals" data-title="The VM">
+    <p class="eyebrow">Internals</p>
+    <h2>The VM</h2>
+    <p>There's one global <code>VM</code> struct. Its important fields:</p>
+    <pre data-lang="c" data-title="src/vm.h">typedef struct
+{
+    CallFrame frames[FRAMES_MAX];   // 64
+    int frameCount;
+
+    Value stack[STACK_MAX];         // 64 * 256
+    Value *stackTop;                // one past the last value
+    ObjUpvalue *openUpvalues;
+    Table globals;
+    Table strings;                  // interned strings
+    Obj *objects;                   // every allocated object
+} VM;</pre>
+
+    <h3>The run loop</h3>
+    <p><code>run()</code> is a <code>for (;;)</code> loop around a <code>switch</code> on the next opcode. Reading helpers are macros over the current frame's instruction pointer (<code>READ_BYTE</code>, <code>READ_SHORT</code>, <code>READ_CONSTANT</code>), and arithmetic shares a <code>BINARY_OP</code> macro.</p>
+
+    <h3>The stack</h3>
+    <p><code>stackTop</code> points <em>one past</em> the last value. <code>push</code> writes then advances, and <code>pop</code> decrements then reads. Executing <code>1 + 2 * 3</code> looks like this:</p>
+    <pre data-lang="bytecode" data-title="trace">          [ &lt;script&gt; ]
+0000    1 OP_CONSTANT         0 '1'
+          [ &lt;script&gt; ][ 1 ]
+0002   |OP_CONSTANT         1 '2'
+          [ &lt;script&gt; ][ 1 ][ 2 ]
+0004   |OP_CONSTANT         2 '3'
+          [ &lt;script&gt; ][ 1 ][ 2 ][ 3 ]
+0006   |OP_MULTIPLY
+          [ &lt;script&gt; ][ 1 ][ 6 ]
+0007   |OP_ADD
+          [ &lt;script&gt; ][ 7 ]
+0008   |OP_PRINT
+7</pre>
+    <p>The leading <code>&lt;script&gt;</code> is the top-level closure sitting in slot 0.</p>
+
+    <h3>Call frames</h3>
+    <p>Every call creates a <code>CallFrame</code>:</p>
+    <pre data-lang="c" data-title="src/vm.h">typedef struct
+{
+    ObjClosure *closure;
+    uint8_t *ip;      // this frame's own instruction pointer
+    Value *slots;     // first stack slot this function owns
+} CallFrame;</pre>
+    <p>The callee and its arguments are already on the stack when <code>OP_CALL</code> runs, so <code>slots</code> just points at the callee's slot. Locals are then addressed as <code>slots[n]</code>, which is why the compiler can resolve them to plain numbers. On <code>OP_RETURN</code> the stack is truncated back to <code>slots</code>, the result is pushed, and the previous frame resumes.</p>
+
+    <h3>Natives</h3>
+    <p><code>callValue()</code> dispatches on object type. Closures push a frame. Natives are called immediately, and their arguments and the callee are replaced by the result.</p>
+  </section>
+
+  <section id="objects" data-group="Internals" data-title="Values &amp; objects">
+    <p class="eyebrow">Internals</p>
+    <h2>Values &amp; objects</h2>
+    <h3>Tagged union</h3>
+    <p>A <code>Value</code> is a type tag plus a union. Numbers, booleans and nil are stored inline. Everything else is a pointer to a heap <code>Obj</code>.</p>
+    <pre data-lang="c" data-title="src/value.h">typedef struct
+{
+    ValueType type;     // VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_OBJ
+    union
+    {
+        bool boolean;
+        double number;
+        Obj *obj;
+    } as;
+} Value;</pre>
+    <p>Macros wrap it: <code>NUMBER_VAL(x)</code> builds a value, <code>IS_NUMBER(v)</code> checks the tag and <code>AS_NUMBER(v)</code> unwraps. Only use <code>AS_</code> after an <code>IS_</code> check.</p>
+
+    <h3>Heap objects</h3>
+    <p>Every object begins with an <code>Obj</code> header, so a pointer to any of them can be treated as an <code>Obj *</code> (struct inheritance in C). The header holds the type tag and a <code>next</code> pointer; all objects form a linked list from <code>vm.objects</code> so they can be freed at shutdown.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Type</th><th>Struct</th><th>Holds</th></tr>
+      <tr><td><code>OBJ_STRING</code></td><td><code>ObjString</code></td><td>length, <code>char *</code>, cached hash</td></tr>
+      <tr><td><code>OBJ_FUNCTION</code></td><td><code>ObjFunction</code></td><td>arity, upvalue count, <code>Chunk</code>, name</td></tr>
+      <tr><td><code>OBJ_CLOSURE</code></td><td><code>ObjClosure</code></td><td>function and array of <code>ObjUpvalue *</code></td></tr>
+      <tr><td><code>OBJ_UPVALUE</code></td><td><code>ObjUpvalue</code></td><td>pointer to a captured variable, plus a slot for when it's closed</td></tr>
+      <tr><td><code>OBJ_NATIVE</code></td><td><code>ObjNative</code></td><td>C function pointer</td></tr>
+    </table></div>
+
+    <h3 id="strings">String interning</h3>
+    <p>Every string is <em>interned</em>: <code>vm.strings</code> maps each distinct string to its single <code>ObjString</code>. Creating a string first hashes it (FNV-1a) and looks it up. If a match exists, it is reused. As a result:</p>
+    <ul>
+      <li>String equality is a pointer comparison.</li>
+      <li>Hash-table lookups never need <code>memcmp</code>.</li>
+      <li>Concatenation allocates a buffer, then hands it to <code>takeString()</code>, which frees the buffer if an identical string already exists.</li>
+    </ul>
+
+    <div class="callout note">
+      <span class="t">Memory</span>
+      <p>All allocation goes through <code>reallocate()</code> in <code>memory.c</code>. There's no garbage collector yet, so objects live until <code>freeVM()</code> calls <code>freeObjects()</code> at exit.</p>
+    </div>
+  </section>
+
+  <section id="tables" data-group="Internals" data-title="Hash tables">
+    <p class="eyebrow">Internals</p>
+    <h2>Hash tables</h2>
+    <p><code>table.c</code> is an open-addressing hash map from <code>ObjString *</code> to <code>Value</code>. It backs both global variables and the string intern set.</p>
+    <ul>
+      <li><b>Probing:</b> linear. The index is <code>hash % capacity</code>, advancing by one on collision.</li>
+      <li><b>Load factor:</b> grows when it would exceed 0.75. Capacity starts at 8 and doubles.</li>
+      <li><b>Deletion:</b> uses <em>tombstones</em> (a <code>NULL</code> key with a <code>true</code> value) so probe chains stay intact. Tombstones count toward the load factor.</li>
+      <li><b>Keys compare by pointer</b> thanks to interning. <code>tableFindString()</code> is the one place that compares characters, and it's what implements the interning.</li>
+    </ul>
+    <div class="table-wrap"><table>
+      <tr><th>Function</th><th>Purpose</th></tr>
+      <tr><td><code>tableGet</code></td><td>look up a key; returns whether it was found</td></tr>
+      <tr><td><code>tableSet</code></td><td>insert or overwrite; returns true if the key is new</td></tr>
+      <tr><td><code>tableDelete</code></td><td>replace the entry with a tombstone</td></tr>
+      <tr><td><code>tableAddAll</code></td><td>copy every entry from one table into another</td></tr>
+      <tr><td><code>tableFindString</code></td><td>find an interned string by content and hash</td></tr>
+    </table></div>
+    <p><code>OP_SET_GLOBAL</code> uses the return value of <code>tableSet</code> neatly: if it reports a <em>new</em> key, the variable didn't exist, so the entry is deleted again and a runtime error is raised.</p>
+  </section>
+
+  <section id="upvalues" data-group="Internals" data-title="Upvalues">
+    <p class="eyebrow">Internals</p>
+    <h2>Upvalues</h2>
+    <p>Closures are the hardest part of the VM. A local lives on the stack, but a closure may need it after its function returns. clox solves this with <b>upvalues</b>.</p>
+
+    <h3>At compile time</h3>
+    <p>When a name isn't a local, <code>resolveUpvalue()</code> looks in the <em>enclosing</em> function:</p>
+    <ol>
+      <li>If the enclosing function has it as a local, mark that local <code>isCaptured</code> and record an upvalue with <code>isLocal = true</code>.</li>
+      <li>Otherwise recurse outward. If found there, record an upvalue with <code>isLocal = false</code> that points at the enclosing function's own upvalue.</li>
+      <li>If nothing matches, it's a global.</li>
+    </ol>
+    <p>The list of <code>(isLocal, index)</code> pairs is emitted right after <code>OP_CLOSURE</code>. This is the real bytecode for the counter example from <a href="#closures">Closures</a>:</p>
+    <pre data-lang="bytecode" data-title="disassembly">== count ==
+0000    3 OP_GET_UPVALUE      0
+0002   |OP_CONSTANT         0 '1'
+0004   |OP_ADD
+0005   |OP_SET_UPVALUE      0
+0007   |OP_POP
+0008   |OP_GET_UPVALUE      0
+0010   |OP_RETURN
+
+== makeCounter ==
+0000    2 OP_CONSTANT         0 '0'
+0002    3 OP_CLOSURE          1 &lt;fn count&gt;
+0004      |                     local 1
+0006    4 OP_GET_LOCAL        2
+0008   |OP_RETURN</pre>
+    <p><code>local 1</code> means: capture the enclosing function's local in slot 1 (<code>i</code>; slot 0 is the function itself).</p>
+
+    <h3>At runtime</h3>
+    <p>When <code>OP_CLOSURE</code> executes, <code>captureUpvalue()</code> creates an <code>ObjUpvalue</code> that points <em>at the stack slot</em>. Open upvalues are kept in a list sorted by stack address, so two closures that capture the same variable share one upvalue and see each other's writes.</p>
+    <p>When a captured local goes out of scope, the compiler emits <code>OP_CLOSE_UPVALUE</code> instead of <code>OP_POP</code> (and <code>OP_RETURN</code> closes everything in its frame). <code>closeUpvalues()</code> copies the value into the upvalue's own <code>closed</code> field and repoints <code>location</code> at it. From then on the variable lives on the heap, and the closure doesn't notice the move.</p>
+  </section>
+
+  <section id="debugging" data-group="Internals" data-title="Debugging">
+    <p class="eyebrow">Internals</p>
+    <h2>Debugging</h2>
+    <p>Two compile-time flags in <code>common.h</code> turn on the built-in tooling:</p>
+    <div class="table-wrap"><table>
+      <tr><th>Flag</th><th>Effect</th></tr>
+      <tr><td><code>DEBUG_PRINT_CODE</code></td><td>After each function is compiled (if there were no errors), print its disassembly.</td></tr>
+      <tr><td><code>DEBUG_TRACE_EXECUTION</code></td><td>Before every instruction, print the stack contents and the disassembled instruction.</td></tr>
+    </table></div>
+    <p><code>debug.c</code> provides <code>disassembleChunk()</code> and <code>disassembleInstruction()</code>. There are three instruction shapes to print: <em>simple</em> (no operand), <em>constant</em> (index plus the value), and <em>byte</em> (raw operand), plus special handling for jumps (shows the target offset) and <code>OP_CLOSURE</code> (lists the captures).</p>
+    <p>To add an opcode, you touch four places: the enum in <code>chunk.h</code>, <code>run()</code> in <code>vm.c</code>, <code>disassembleInstruction()</code> in <code>debug.c</code>, and whichever compiler function emits it.</p>
+  </section>
+
+  <!-- ═════════════ REFERENCE ═════════════ -->
+
+  <section id="grammar" data-group="Reference" data-title="Grammar">
+    <p class="eyebrow">Reference</p>
+    <h2>Grammar</h2>
+    <p>The grammar that the compiler actually accepts, in the notation of the book.</p>
+    <pre data-lang="grammar" data-title="grammar">program     → declaration* EOF ;
+
+declaration → funDecl | varDecl | statement ;
+funDecl     → "fun" IDENTIFIER "(" parameters? ")" block ;
+parameters  → IDENTIFIER ( "," IDENTIFIER )* ;
+varDecl     → "var" IDENTIFIER ( "=" expression )? ";" ;
+
+statement   → exprStmt | forStmt | ifStmt | printStmt
+            | returnStmt | whileStmt | block ;
+exprStmt    → expression ";" ;
+forStmt     → "for" "(" ( varDecl | exprStmt | ";" )
+                        expression? ";" expression? ")" statement ;
+ifStmt      → "if" "(" expression ")" statement ( "else" statement )? ;
+printStmt   → "print" expression ";" ;
+returnStmt  → "return" expression? ";" ;
+whileStmt   → "while" "(" expression ")" statement ;
+block       → "{" declaration* "}" ;
+
+expression  → assignment ;
+assignment  → IDENTIFIER "=" assignment | logic_or ;
+logic_or    → logic_and ( "or" logic_and )* ;
+logic_and   → equality ( "and" equality )* ;
+equality    → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison  → term ( ( ">" | ">=" | "&lt;" | "&lt;=" ) term )* ;
+term        → factor ( ( "-" | "+" ) factor )* ;
+factor      → unary ( ( "/" | "*" ) unary )* ;
+unary       → ( "!" | "-" ) unary | call ;
+call        → primary ( "(" arguments? ")" )* ;
+arguments   → expression ( "," expression )* ;
+primary     → "true" | "false" | "nil" | NUMBER | STRING
+            | IDENTIFIER | "(" expression ")" ;</pre>
+  </section>
+
+  <section id="precedence" data-group="Reference" data-title="Precedence">
+    <p class="eyebrow">Reference</p>
+    <h2>Precedence</h2>
+    <p>From lowest to highest, as defined by the <code>Precedence</code> enum in <code>compiler.c</code>. Everything is left-associative except assignment.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Level</th><th>Enum</th><th>Operators</th></tr>
+      <tr><td>1</td><td><code>PREC_ASSIGNMENT</code></td><td><code>=</code></td></tr>
+      <tr><td>2</td><td><code>PREC_OR</code></td><td><code>or</code></td></tr>
+      <tr><td>3</td><td><code>PREC_AND</code></td><td><code>and</code></td></tr>
+      <tr><td>4</td><td><code>PREC_EQUALITY</code></td><td><code>== !=</code></td></tr>
+      <tr><td>5</td><td><code>PREC_COMPARISON</code></td><td><code>&lt; &gt; &lt;= &gt;=</code></td></tr>
+      <tr><td>6</td><td><code>PREC_TERM</code></td><td><code>+ -</code></td></tr>
+      <tr><td>7</td><td><code>PREC_FACTOR</code></td><td><code>* /</code></td></tr>
+      <tr><td>8</td><td><code>PREC_UNARY</code></td><td><code>! -</code> (prefix)</td></tr>
+      <tr><td>9</td><td><code>PREC_CALL</code></td><td><code>()</code></td></tr>
+    </table></div>
+  </section>
+
+  <section id="limits" data-group="Reference" data-title="Limits">
+    <p class="eyebrow">Reference</p>
+    <h2>Limits</h2>
+    <p>Most limits come from using a single byte for an operand.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Limit</th><th>Value</th><th>Source</th></tr>
+      <tr><td>Constants per function</td><td>256</td><td>1-byte constant index</td></tr>
+      <tr><td>Local variables per function</td><td>256 (including slot 0)</td><td><code>UINT8_COUNT</code></td></tr>
+      <tr><td>Upvalues per function</td><td>256</td><td>1-byte upvalue index</td></tr>
+      <tr><td>Parameters / arguments</td><td>255</td><td>1-byte arg count</td></tr>
+      <tr><td>Jump distance</td><td>65,535 bytes</td><td>2-byte offset</td></tr>
+      <tr><td>Call depth</td><td>64 frames</td><td><code>FRAMES_MAX</code></td></tr>
+      <tr><td>Value stack</td><td>16,384 slots</td><td><code>STACK_MAX</code> = <code>FRAMES_MAX * 256</code></td></tr>
+      <tr><td>REPL line length</td><td>1,023 characters</td><td>fixed buffer in <code>main.c</code></td></tr>
+    </table></div>
+  </section>
+
+  <section id="source-map" data-group="Reference" data-title="Source map">
+    <p class="eyebrow">Reference</p>
+    <h2>Source map</h2>
+    <div class="table-wrap"><table>
+      <tr><th>File</th><th>Role</th></tr>
+      <tr><td><code>main.c</code></td><td>REPL, file reading, exit codes</td></tr>
+      <tr><td><code>common.h</code></td><td>shared includes, debug flags, <code>UINT8_COUNT</code></td></tr>
+      <tr><td><code>scanner.c/.h</code></td><td>on-demand tokenizer</td></tr>
+      <tr><td><code>compiler.c/.h</code></td><td>Pratt parser and bytecode emitter, scopes, upvalue resolution</td></tr>
+      <tr><td><code>chunk.c/.h</code></td><td>opcode enum, bytecode and line arrays, constants</td></tr>
+      <tr><td><code>vm.c/.h</code></td><td>stack, call frames, run loop, natives, upvalue capture</td></tr>
+      <tr><td><code>value.c/.h</code></td><td>tagged-union values, <code>ValueArray</code>, equality, printing</td></tr>
+      <tr><td><code>object.c/.h</code></td><td>heap objects, string interning and hashing</td></tr>
+      <tr><td><code>table.c/.h</code></td><td>open-addressing hash table</td></tr>
+      <tr><td><code>memory.c/.h</code></td><td><code>reallocate()</code> and the allocation macros</td></tr>
+      <tr><td><code>debug.c/.h</code></td><td>disassembler</td></tr>
+    </table></div>
+  </section>
+
+  <section id="status" data-group="Reference" data-title="Status">
+    <p class="eyebrow">Reference</p>
+    <h2>Status</h2>
+    <p>clox follows <em>Crafting Interpreters</em> part III. Implemented so far:</p>
+    <div class="table-wrap"><table>
+      <tr><th>Chapter</th><th>Topic</th><th></th></tr>
+      <tr><td>14–15</td><td>Chunks, constants, the VM and its stack</td><td>✅</td></tr>
+      <tr><td>16–17</td><td>Scanner and the Pratt compiler</td><td>✅</td></tr>
+      <tr><td>18–19</td><td>Types, strings and objects</td><td>✅</td></tr>
+      <tr><td>20</td><td>Hash tables</td><td>✅</td></tr>
+      <tr><td>21–22</td><td>Global and local variables</td><td>✅</td></tr>
+      <tr><td>23</td><td>Jumping back and forth (control flow)</td><td>✅</td></tr>
+      <tr><td>24</td><td>Calls and functions</td><td>✅</td></tr>
+      <tr><td>25</td><td>Closures</td><td>✅</td></tr>
+      <tr><td>26</td><td>Garbage collection</td><td>not yet</td></tr>
+      <tr><td>27–29</td><td>Classes, methods and inheritance</td><td>not yet</td></tr>
+      <tr><td>30</td><td>Optimization</td><td>not yet</td></tr>
+    </table></div>
+    <p>The scanner already recognises <code>class</code>, <code>this</code>, <code>super</code> and <code>.</code>, but the compiler has no rules for them.</p>
+  </section>
+
+  </div>
+  </main>
+</div>
+
+<footer>clox docs · based on <a href="https://craftinginterpreters.com">Crafting Interpreters</a> by Robert Nystrom</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
