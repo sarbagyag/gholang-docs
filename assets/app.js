@@ -4,7 +4,7 @@
   /* ── theme ── */
   var root = document.documentElement;
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
-  var saved = store("clox-theme");
+  var saved = store("gholang-theme");
   if (saved) root.setAttribute("data-theme", saved);
   var themeBtn = document.getElementById("theme-btn");
   function isDark() {
@@ -15,7 +15,7 @@
   themeBtn.addEventListener("click", function () {
     var next = isDark() ? "light" : "dark";
     root.setAttribute("data-theme", next);
-    store("clox-theme", next);
+    store("gholang-theme", next);
     paintThemeBtn();
   });
   paintThemeBtn();

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>clox Docs</title>
-<meta name="description" content="Documentation for clox, a bytecode virtual machine for the Lox language written in C, following Crafting Interpreters." />
-<meta name="theme-color" content="#b3431a" />
+<title>gholang Docs</title>
+<meta name="description" content="Documentation for gholang, a bytecode virtual machine for the Lox language written in C, following Crafting Interpreters." />
+<meta name="theme-color" content="#0b6e99" />
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,7 +16,7 @@
 
 <header class="topbar">
   <button id="menu-btn" class="icon-btn" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav">☰</button>
-  <a class="brand" href="#overview"><span class="mark">cl</span> clox <small>docs</small></a>
+  <a class="brand" href="#overview"><span class="mark">gho</span> gholang <small>docs</small></a>
   <span class="spacer"></span>
   <a class="top-link" href="https://craftinginterpreters.com/a-bytecode-virtual-machine.html" rel="noopener">The book ↗</a>
   <button id="theme-btn" class="icon-btn" type="button" aria-label="Toggle theme">☾</button>
@@ -34,9 +34,9 @@
   <!-- ═════════════ GET STARTED ═════════════ -->
 
   <section id="overview" data-group="Get started" data-title="Overview">
-    <p class="eyebrow">clox</p>
+    <p class="eyebrow">gholang</p>
     <h1>A bytecode VM for Lox, in C.</h1>
-    <p class="lead">clox compiles Lox source into compact bytecode in a single pass, then runs it on a stack-based virtual machine. It is the second half of <em>Crafting Interpreters</em> by Robert Nystrom, written in plain C99 with no dependencies.</p>
+    <p class="lead">gholang compiles Lox source into compact bytecode in a single pass, then runs it on a stack-based virtual machine. It is the second half of <em>Crafting Interpreters</em> by Robert Nystrom, written in plain C99 with no dependencies.</p>
     <div class="hero-actions">
       <a class="btn" href="#build">Build &amp; run</a>
       <a class="btn ghost" href="#pipeline">How it works</a>
@@ -68,15 +68,15 @@
     <p class="eyebrow">Get started</p>
     <h2>Build &amp; run</h2>
     <p>You need a C compiler and <code>make</code>. The <code>Makefile</code> uses <code>clang</code> with <code>-Wall -Wextra -std=c99</code>.</p>
-    <pre data-lang="bash" data-title="shell">git clone &lt;your-repo-url&gt; clox
-cd clox
-make            # builds ./clox
-./clox script.lox</pre>
+    <pre data-lang="bash" data-title="shell">git clone &lt;your-repo-url&gt; gholang
+cd gholang
+make            # builds ./gholang
+./gholang script.lox</pre>
     <p>If you don't have <code>clang</code>, override it: <code>make CC=gcc</code>. <code>make clean</code> removes the binary.</p>
 
     <h3>Your first program</h3>
     <pre data-lang="lox" data-title="hello.lox">var greeting = "Hello";
-print greeting + ", clox!";</pre>
+print greeting + ", gholang!";</pre>
 
     <div class="callout warn">
       <span class="t">Debug output is on by default</span>
@@ -91,9 +91,9 @@ print greeting + ", clox!";</pre>
     <h2>CLI &amp; REPL</h2>
     <div class="table-wrap"><table>
       <tr><th>Invocation</th><th>Behaviour</th></tr>
-      <tr><td><code>./clox</code></td><td>Starts the REPL with a <code>&gt; </code> prompt. Press Ctrl-D to quit.</td></tr>
-      <tr><td><code>./clox file.lox</code></td><td>Reads the whole file, then interprets it.</td></tr>
-      <tr><td><code>./clox a b</code></td><td>Prints <code>Usage: clox [path]</code> and exits 64.</td></tr>
+      <tr><td><code>./gholang</code></td><td>Starts the REPL with a <code>&gt; </code> prompt. Press Ctrl-D to quit.</td></tr>
+      <tr><td><code>./gholang file.lox</code></td><td>Reads the whole file, then interprets it.</td></tr>
+      <tr><td><code>./gholang a b</code></td><td>Prints <code>Usage: gholang [path]</code> and exits 64.</td></tr>
     </table></div>
 
     <p>The REPL reads one line at a time (up to 1023 characters) and interprets each as its own script. Globals persist between lines because they live in the VM, but a statement can't span lines.</p>
@@ -237,7 +237,7 @@ print fib;       // &lt;fn fib&gt;</pre>
 var c = makeCounter();
 print c();   // 1
 print c();   // 2</pre>
-    <p>Here <code>count</code> captures <code>i</code>, which would normally vanish when <code>makeCounter</code> returns. clox keeps it alive using <a href="#upvalues">upvalues</a>.</p>
+    <p>Here <code>count</code> captures <code>i</code>, which would normally vanish when <code>makeCounter</code> returns. gholang keeps it alive using <a href="#upvalues">upvalues</a>.</p>
   </section>
 
   <section id="natives" data-group="Language" data-title="Native functions">
@@ -260,7 +260,7 @@ print clock() - start;</pre>
     <h2>Errors</h2>
     <h3>Compile errors</h3>
     <p>Printed to stderr as <code>[line N] Error at 'token': message</code>. After the first error the parser enters <em>panic mode</em> and skips tokens until a statement boundary, so you see one error per mistake rather than a cascade. The program is not run.</p>
-    <pre data-lang="shell" data-title="shell" data-nolabel>$ ./clox bad.lox
+    <pre data-lang="shell" data-title="shell" data-nolabel>$ ./gholang bad.lox
 [line 1] Error at '1': Expect variable name.
 $ echo $?
 65</pre>
@@ -570,7 +570,7 @@ ParseRule rules[] = {
   <section id="upvalues" data-group="Internals" data-title="Upvalues">
     <p class="eyebrow">Internals</p>
     <h2>Upvalues</h2>
-    <p>Closures are the hardest part of the VM. A local lives on the stack, but a closure may need it after its function returns. clox solves this with <b>upvalues</b>.</p>
+    <p>Closures are the hardest part of the VM. A local lives on the stack, but a closure may need it after its function returns. gholang solves this with <b>upvalues</b>.</p>
 
     <h3>At compile time</h3>
     <p>When a name isn't a local, <code>resolveUpvalue()</code> looks in the <em>enclosing</em> function:</p>
@@ -711,7 +711,7 @@ primary     → "true" | "false" | "nil" | NUMBER | STRING
   <section id="status" data-group="Reference" data-title="Status">
     <p class="eyebrow">Reference</p>
     <h2>Status</h2>
-    <p>clox follows <em>Crafting Interpreters</em> part III. Implemented so far:</p>
+    <p>gholang follows <em>Crafting Interpreters</em> part III. Implemented so far:</p>
     <div class="table-wrap"><table>
       <tr><th>Chapter</th><th>Topic</th><th></th></tr>
       <tr><td>14–15</td><td>Chunks, constants, the VM and its stack</td><td>✅</td></tr>
@@ -733,7 +733,7 @@ primary     → "true" | "false" | "nil" | NUMBER | STRING
   </main>
 </div>
 
-<footer>clox docs · based on <a href="https://craftinginterpreters.com">Crafting Interpreters</a> by Robert Nystrom</footer>
+<footer>gholang docs · based on <a href="https://craftinginterpreters.com">Crafting Interpreters</a> by Robert Nystrom</footer>
 
 <script src="assets/app.js"></script>
 </body>

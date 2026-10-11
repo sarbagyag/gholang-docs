@@ -1,31 +1,31 @@
 /* ───────── tokens ───────── */
 :root {
-  --bg: #faf8f4;
+  --bg: #f4f8fb;
   --surface: #ffffff;
-  --surface-2: #f3efe8;
-  --text: #1c1a16;
-  --muted: #6c6459;
-  --faint: #8a8174;
-  --border: #e7e0d5;
-  --border-2: #d9d0c1;
-  --accent: #b3431a;
-  --accent-2: #8f3413;
-  --accent-soft: #f5e7dd;
-  --ok: #3f6f43;
-  --ok-soft: #e7f0e4;
-  --note: #395b7a;
-  --note-soft: #e4ecf3;
+  --surface-2: #e9f0f5;
+  --text: #12202b;
+  --muted: #52667a;
+  --faint: #74879a;
+  --border: #dae5ed;
+  --border-2: #c5d4e0;
+  --accent: #0b6e99;
+  --accent-2: #085577;
+  --accent-soft: #dcedf5;
+  --ok: #2f7a5b;
+  --ok-soft: #e0f1ea;
+  --note: #3b5f8a;
+  --note-soft: #e3ebf6;
   --warn: #8a5a00;
   --warn-soft: #f7ecd0;
-  --code-bg: #1f1c17;
-  --code-fg: #ece5d8;
-  --code-c: #8d8473;
-  --code-s: #9bd09e;
-  --code-n: #f0a061;
-  --code-k: #ee8f50;
-  --code-b: #86b2d6;
+  --code-bg: #0f1c26;
+  --code-fg: #dfeaf2;
+  --code-c: #7490a5;
+  --code-s: #8fd6b5;
+  --code-n: #f0b27a;
+  --code-k: #5cc8e6;
+  --code-b: #8db4f0;
   --code-op: #e9c46a;
-  --shadow: 0 1px 2px rgba(28, 26, 22, .04), 0 8px 28px -12px rgba(28, 26, 22, .14);
+  --shadow: 0 1px 2px rgba(18, 32, 43, .04), 0 8px 28px -12px rgba(18, 32, 43, .14);
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
   --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -39,48 +39,48 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #16140f;
-    --surface: #1e1b15;
-    --surface-2: #26221a;
-    --text: #efe9dd;
-    --muted: #a1988a;
-    --faint: #7c7263;
-    --border: #322d23;
-    --border-2: #3f3a2d;
-    --accent: #e8863f;
-    --accent-2: #f0a061;
-    --accent-soft: #2c2116;
-    --ok: #7db27f;
-    --ok-soft: #1d2a1c;
-    --note: #7ba7cc;
-    --note-soft: #182634;
+    --bg: #0b141b;
+    --surface: #101c25;
+    --surface-2: #16252f;
+    --text: #e4eef5;
+    --muted: #94a9b8;
+    --faint: #6a8294;
+    --border: #1c2e3a;
+    --border-2: #274050;
+    --accent: #4fb8dc;
+    --accent-2: #7cd0ea;
+    --accent-soft: #11303d;
+    --ok: #6cc3a0;
+    --ok-soft: #10281f;
+    --note: #8ab4e8;
+    --note-soft: #14253a;
     --warn: #e0b560;
     --warn-soft: #2d2411;
-    --code-bg: #100f0b;
+    --code-bg: #070e13;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 34px -14px rgba(0, 0, 0, .6);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #16140f;
-  --surface: #1e1b15;
-  --surface-2: #26221a;
-  --text: #efe9dd;
-  --muted: #a1988a;
-  --faint: #7c7263;
-  --border: #322d23;
-  --border-2: #3f3a2d;
-  --accent: #e8863f;
-  --accent-2: #f0a061;
-  --accent-soft: #2c2116;
-  --ok: #7db27f;
-  --ok-soft: #1d2a1c;
-  --note: #7ba7cc;
-  --note-soft: #182634;
+  --bg: #0b141b;
+  --surface: #101c25;
+  --surface-2: #16252f;
+  --text: #e4eef5;
+  --muted: #94a9b8;
+  --faint: #6a8294;
+  --border: #1c2e3a;
+  --border-2: #274050;
+  --accent: #4fb8dc;
+  --accent-2: #7cd0ea;
+  --accent-soft: #11303d;
+  --ok: #6cc3a0;
+  --ok-soft: #10281f;
+  --note: #8ab4e8;
+  --note-soft: #14253a;
   --warn: #e0b560;
   --warn-soft: #2d2411;
-  --code-bg: #100f0b;
+  --code-bg: #070e13;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 34px -14px rgba(0, 0, 0, .6);
 }
 
@@ -131,7 +131,7 @@ p code, li code, td code, th code, h3 code, .lead code, .callout code {
   width: 26px; height: 26px; flex: none; border-radius: 7px;
   display: grid; place-items: center;
   background: var(--accent); color: #fff;
-  font: 600 .8rem/1 var(--font-mono);
+  font: 600 .62rem/1 var(--font-mono);
 }
 .brand small { font-weight: 400; color: var(--muted); font-size: .8rem; }
 .spacer { flex: 1; }
@@ -204,7 +204,7 @@ li { margin: 4px 0; }
 /* ───────── code ───────── */
 .code { position: relative; margin: 16px 0 20px; max-width: 100%; }
 .code .label {
-  position: absolute; top: 8px; left: 14px; font: 500 .68rem/1 var(--font-mono); color: #8d8473;
+  position: absolute; top: 8px; left: 14px; font: 500 .68rem/1 var(--font-mono); color: #7490a5;
   letter-spacing: .06em; text-transform: uppercase; pointer-events: none;
 }
 .code pre {
