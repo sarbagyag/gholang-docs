@@ -1,24 +1,7 @@
 (function () {
   "use strict";
 
-  /* ── theme ── */
-  var root = document.documentElement;
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
-  var saved = store("gholang-theme");
-  if (saved) root.setAttribute("data-theme", saved);
-  var themeBtn = document.getElementById("theme-btn");
-  function isDark() {
-    var t = root.getAttribute("data-theme");
-    return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-  }
-  function paintThemeBtn() { themeBtn.textContent = isDark() ? "☀" : "☾"; themeBtn.setAttribute("aria-label", isDark() ? "Switch to light theme" : "Switch to dark theme"); }
-  themeBtn.addEventListener("click", function () {
-    var next = isDark() ? "light" : "dark";
-    root.setAttribute("data-theme", next);
-    store("gholang-theme", next);
-    paintThemeBtn();
-  });
-  paintThemeBtn();
 
   /* ── sidebar from sections ── */
   var sections = Array.prototype.slice.call(document.querySelectorAll("main section[data-group]"));
